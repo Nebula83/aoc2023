@@ -37,6 +37,6 @@ class Day2
         // var lines = day.readFile("test-2.txt");
         var lines = day.readFile("input.txt");
 
-        Console.WriteLine($"Result 2: {result}");
+        // Console.WriteLine($"Result 2: {result}");
     }
 }

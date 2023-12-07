@@ -34,9 +34,9 @@ class Day1
     internal static void Run()
     {
         var day = new Day1();
-        // var lines = day1.readFile("test-1.txt");
+        // var lines = day.readFile("test-1.txt");
         var lines = day.readFile("input.txt");
 
-        Console.WriteLine($"Result 1: {result}");
+        // Console.WriteLine($"Result 1: {result}");
     }
 }
