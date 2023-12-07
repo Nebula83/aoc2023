@@ -109,6 +109,5 @@ class Day2
             result += value;
         }
         Console.WriteLine($"Result 1.2: {result}");
-
     }
 }
