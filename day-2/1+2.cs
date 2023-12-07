@@ -88,14 +88,14 @@ class Day1
     internal static void Run()
     {
         var day = new Day1();
-        // var lines = day.readFile("test-1.txt");
+        // var lines = day.readFile("test.txt");
         var lines = day.readFile("input.txt");
 
         const int maxRed = 12;
         const int maxGreen = 13;
         const int maxBlue = 14;
 
-        int result = 0;
+        int result1 = 0;
         foreach (var line in lines)
         {
             // Console.WriteLine(line);
@@ -103,11 +103,20 @@ class Day1
             bool possible = (red <= maxRed) && (green <= maxGreen) && (blue <= maxBlue);
             if (possible)
             {
-                result += game;
+                result1 += game;
             }
             // Console.WriteLine($"game{game} r{red}, g{green}, b{blue}");
         }
 
-        Console.WriteLine($"Result 1: {result}");
+        Console.WriteLine($"Result 1: {result1}");
+
+        int result2 = 0;
+        foreach (var line in lines)
+        {
+            // Console.WriteLine(line);
+            var (game, red, green, blue) = day.GetHighScores(line);
+            result2 += (red *  green* blue);
+        }
+        Console.WriteLine($"Result 2: {result2}");
     }
 }
