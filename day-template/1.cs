@@ -2,7 +2,7 @@ using System.IO;
 
 class Day1
 {
-    private List<string> readFile(string name)
+    private List<string> ReadFile(string name)
     {
         List<string> lines = new List<string>();
         string? line;
@@ -34,8 +34,8 @@ class Day1
     internal static void Run()
     {
         var day = new Day1();
-        // var lines = day.readFile("test-1.txt");
-        var lines = day.readFile("input.txt");
+        var lines = day.ReadFile("test-1.txt");
+        // var lines = day.ReadFile("input.txt");
 
         // Console.WriteLine($"Result 1: {result}");
     }
