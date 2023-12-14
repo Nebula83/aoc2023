@@ -1,7 +1,7 @@
 using System.IO;
 using System.Text.RegularExpressions;
 
-class Day1
+class Day2
 {
     private List<string> ReadFile(string name)
     {
@@ -43,22 +43,41 @@ class Day1
                         .Trim();
         
         var digits = new Regex(@"(\d+)");
-        return new Card{
+        var card = new Card{
             Number = int.Parse(line.Substring(4, pastNumberPosition - 4)),
             Winning = digits.Matches(winning).Select(m => int.Parse(m.Groups[0].Value)).ToList(),
-            Given = digits.Matches(given).Select(m => int.Parse(m.Groups[0].Value)).ToList(),
+            Given = digits.Matches(given).Select(m => int.Parse(m.Groups[0].Value)).ToList()
         };
+        card.Winnings = Enumerable.Range(start: card.Number + 1, card.Given.Intersect(card.Winning).Count()).ToList();
+
+        return card;
+    }
+
+    private int GetCardCount(Card card, List<Card> cards)
+    {
+        int count = 1;
+        foreach (var win in card.Winnings)
+        {
+            // Convert the game number into an index into the table
+            count += GetCardCount(cards[win - 1], cards);
+        } 
+
+        return count;
     }
 
     internal static void Run()
     {
-        var day = new Day1();
+        var day = new Day2();
         // var lines = day.ReadFile("test-1.txt");
         var lines = day.ReadFile("input.txt");
         var cards = lines.Select(l => day.ParseLine(l)).ToList();
 
-        var result = cards.Select(c =>  (int)Math.Pow(2, c.Given.Intersect(c.Winning).Count() - 1)).Sum();
+        var result = 0;
+        foreach (var card in cards)
+        {
+            result += day.GetCardCount(card, cards);
+        }
 
-        Console.WriteLine($"Result 1: {result}");
+        Console.WriteLine($"Result 2: {result}");
     }
 }
