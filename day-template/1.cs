@@ -26,6 +26,7 @@ class Day1
         catch(Exception e)
         {
             Console.WriteLine("Exception: " + e.Message);
+            throw;
         }
 
         return lines;
