@@ -1,4 +1,9 @@
-class Day1
+using System.ComponentModel.DataAnnotations;
+using System.Data;
+using System.IO;
+using System.Runtime.CompilerServices;
+
+class Day2
 {
     private List<string> ReadFile(string name)
     {
@@ -164,80 +169,114 @@ class Day1
 
     internal static void Run()
     {
-        var day = new Day1();
+        var day = new Day2();
         // var grid = day.ReadFile("test-1.txt");
         var grid = day.ReadFile("input.txt");
-        var visited = new bool[grid.Count, grid[0].Length];
-        var beams = new List<Beam>
+
+        var results = new List<int>();
+        var beamQueue = new Queue<Beam>();
+        
+        for (int row = 0; row < grid.Count; row++)
         {
-            // Initial beam
-            new Beam
-            {
+            beamQueue.Enqueue(new Beam{
                 CurrentDirection = Direction.ToTheRight,
-                Row = 0,
+                Row = row,
                 Column = 0,
-            }
-        };
-
-        var prevResult = 0;
-        var stabilized = 0;
-        while (beams.Count > 0)
-        {
-            var deadBeams = new Queue<Beam>();
-            var newBeams = new Queue<Beam>();
-            foreach (var beam in beams)
-            {
-                try
-                {
-                    visited[beam.Row, beam.Column] = true;
-                    var newBeam = day.UpdateBeam(beam, grid[beam.Row][beam.Column]);
-                    if (newBeam != null)
-                    {
-                        newBeams.Enqueue(newBeam);
-                    }
-                }
-                // Beam walked off the screen, remove it
-                catch (IndexOutOfRangeException)
-                {
-                    deadBeams.Enqueue(beam);
-                }
-            }
-
-            while (newBeams.Count > 0)
-            {
-                beams.Add(newBeams.Dequeue());
-            }
-
-            while (deadBeams.Count > 0)
-            {
-                beams.Remove(deadBeams.Dequeue());
-            }
-
-            var result = 0;
-            foreach (var cell in visited)
-            {
-                if (cell)
-                {
-                    result++;
-                }
-            }
-
-            if (prevResult != result)
-            {
-                prevResult = result;
-                stabilized = 0;
-            }
-            else
-            {
-                stabilized++;
-            }
-
-            if (stabilized > 10)
-            {
-                break;
-            }
+            });
+            beamQueue.Enqueue(new Beam{
+                CurrentDirection = Direction.ToTheLeft,
+                Row = row,
+                Column = grid.Count -1,
+            });
         }
 
-        Console.WriteLine($"Result 1: {prevResult}");
+        for (int column = 0; column < grid[0].Length; column++)
+        {
+            beamQueue.Enqueue(new Beam{
+                CurrentDirection = Direction.Down,
+                Row = 0,
+                Column = column,
+            });
+            beamQueue.Enqueue(new Beam{
+                CurrentDirection = Direction.Up,
+                Row = grid[0].Length - 1,
+                Column = column,
+            });
+        }
+        
+        while (beamQueue.Count > 0)
+        {
+            var visited = new bool[grid.Count, grid[0].Length];
+            var beams = new List<Beam>
+            {
+                // Initial beam
+                beamQueue.Dequeue()
+            };
+
+            var prevResult = 0;
+            var stabilized = 0;
+
+            while (beams.Count > 0)
+            {
+                var deadBeams = new Queue<Beam>();
+                var newBeams = new Queue<Beam>();
+                foreach (var beam in beams)
+                {
+                    if ((0 <= beam.Row && beam.Row < grid.Count) 
+                        && (0 <= beam.Column && beam.Column < grid[0].Length))
+                    {
+                        visited[beam.Row, beam.Column] = true;
+                        var newBeam = day.UpdateBeam(beam, grid[beam.Row][beam.Column]);
+                        if (newBeam != null)
+                        {
+                            newBeams.Enqueue(newBeam);
+                        }
+                    }
+                    else
+                    {
+                        deadBeams.Enqueue(beam);
+                    }
+                }
+
+                while (newBeams.Count > 0)
+                {
+                    beams.Add(newBeams.Dequeue());
+                }
+
+                while (deadBeams.Count > 0)
+                {
+                    beams.Remove(deadBeams.Dequeue());
+                }
+
+                var result = 0;
+                foreach (var cell in visited)
+                {
+                    if (cell)
+                    {
+                        result++;
+                    }
+                }
+
+                // What a horrible construction, but somehow it doesn't end otherwise
+                if (prevResult != result)
+                {
+                    prevResult = result;
+                    stabilized = 0;
+                }
+                else
+                {
+                    stabilized++;
+                }
+
+                if (stabilized > 8)
+                {
+                    break;
+                }
+            }
+
+            results.Add(prevResult);
+        }
+
+        Console.WriteLine($"Result 2: {results.Max()} ");
     }
 }
