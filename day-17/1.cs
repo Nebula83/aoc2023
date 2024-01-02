@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics;
 using System.IO;
 using System.Reflection.Metadata;
 
@@ -33,25 +34,46 @@ partial class Day1
 
         return lines;
     }
+    
     private static List<Node> GetCandidates(Node node, int[,] blocks)
     {
-        var nodes = new List<Node>();
+        var candidates = new List<Node>();
         foreach (var (direction, position) in node.Position.GetNeighbors(blocks.GetLength(0), blocks.GetLength(1)))
         {
-            nodes.Add(new Node{
-                Position = position,
-            });
-
+            // Can't walk back
+            if (direction != node.Direction.Opposite())
+            {
+                // Different direction, reset steps
+                if (direction != node.Direction)
+                {
+                    candidates.Add(new Node
+                    {
+                        Position = position,
+                        Direction = direction,
+                        Steps = 1,
+                    });
+                }
+                // Still within allowed distance
+                else if (node.Steps < 3)
+                {
+                    candidates.Add(new Node
+                    {
+                        Position = position,
+                        Direction = direction,
+                        Steps = node.Steps + 1,
+                    });
+                }
+            }
         }
-        return nodes;
+        return candidates;
     }
 
     internal static void Run()
     {
         var day = new Day1();
-        var lines = day.ReadFile("test-1.txt");
+        // var lines = day.ReadFile("test-1.txt");
         // var lines = day.ReadFile("test-2.txt");
-        // var lines = day.ReadFile("input.txt");
+        var lines = day.ReadFile("input.txt");
 
         // Convert the input strings into integers
         var blocks = new int[lines.Count, lines[0].Length];
@@ -63,35 +85,30 @@ partial class Day1
             }
         }
 
-        var result = Dijkstra(blocks);
-
-        Console.WriteLine($"Result 1: {result}");
-    }
-
-    private static int Dijkstra(int[,] blocks)
-    {
         // Start at top left corner
         var startPoint = new Node
         {
-            Position = new Position(0, 0)
+            Position = new Position(0, 0),
+            Direction = Direction.Any,
+            Steps = 0,
         };
 
         // Stop at bottom right corner
         Position destination = new Position(blocks.GetLength(0) - 1, blocks.GetLength(1) - 1);
 
+        var result = Dijkstra(blocks, startPoint, destination);
 
+        Console.WriteLine($"Result 1: {result}");
+    }
+
+    private static int Dijkstra(int[,] blocks, Node startPoint, Position destination)
+    {
         // lol. Convert node to heat loss
-        var heatMap = new Dictionary<Node, int>
-        {
-            { startPoint, 0 },
-        };
+        var heatMap = new Dictionary<Node, int> { { startPoint, 0 }};
 
         // Node with heat loss ordered by heat loss
         var queue = new PriorityQueue<(Node, int), int>();
-        foreach (var node in heatMap.Keys)
-        {
-            queue.Enqueue((node, 0), 0);
-        }
+        queue.Enqueue((startPoint, 0), 0);
 
         while (queue.Count > 0)
         {
@@ -114,6 +131,6 @@ partial class Day1
             }
         }
 
-        throw new Exception();
+        throw new UnreachableException("End point not found");
     }
 }
