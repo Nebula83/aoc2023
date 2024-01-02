@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.IO;
 using System.Reflection.Metadata;
 
-class Day1
+partial class Day1
 {
     private List<string> ReadFile(string name)
     {
@@ -33,6 +33,18 @@ class Day1
 
         return lines;
     }
+    private static List<Node> GetCandidates(Node node, int[,] blocks)
+    {
+        var nodes = new List<Node>();
+        foreach (var (direction, position) in node.Position.GetNeighbors(blocks.GetLength(0), blocks.GetLength(1)))
+        {
+            nodes.Add(new Node{
+                Position = position,
+            });
+
+        }
+        return nodes;
+    }
 
     internal static void Run()
     {
@@ -41,202 +53,67 @@ class Day1
         // var lines = day.ReadFile("test-2.txt");
         // var lines = day.ReadFile("input.txt");
 
-        var nodes = new Node[lines.Count, lines[0].Length];
+        // Convert the input strings into integers
+        var blocks = new int[lines.Count, lines[0].Length];
         for (int row = 0; row < lines.Count; row++)
         {
             for (int column = 0; column < lines[0].Length; column++)
             {
-                nodes[row, column] = new Node
-                {
-                    HeatLoss = int.Parse($"{lines[row][column]}"),
-                    Row = row,
-                    Column = column,
-                };
+                blocks[row, column] = int.Parse($"{lines[row][column]}");
             }
         }
 
-        // Start point
-        var start = nodes[0, 0];
-        start.Distance = 0;
-        start.Direction = Direction.Xnknown;
+        var result = Dijkstra(blocks);
 
-        var nodeQueue = new PriorityQueue<Node, int>();
-        nodeQueue.Enqueue(start, start.Distance);
-        
-        while (nodeQueue.Count > 0)
-        {
-            var currentNode = nodeQueue.Dequeue();
-
-            var candidates = GetNeighbors(nodes, currentNode);
-            foreach (var (direction, candidate) in candidates)
-            {
-                if (currentNode.Steps == 3 && currentNode.Direction == direction)
-                    continue;
-
-                // Andere boeg, zelfde resultaat.
-                // if (candidate.IsWithinUnidirectionalDistance(currentNode))
-                {
-                    var newDistance = currentNode.Distance + candidate.HeatLoss;
-                    if (newDistance < candidate.Distance)
-                    {
-                        candidate.Distance = newDistance;
-                        candidate.Parent = currentNode;
-                        candidate.Direction = direction;
-                       
-                        // If the direction of travel is the same: raise the step count. Otherwise reset.
-                        if (candidate.Direction == currentNode.Direction)
-                        {
-                            candidate.Steps = currentNode.Steps + 1;
-                        }
-                        else 
-                        {
-                            candidate.Steps = 1;
-                        }
-                        
-                        nodeQueue.Enqueue(candidate, candidate.Distance);
-                    }
-                }
-            }
-            // currentNode.Visited = true;
-        }
-
-        // Fetch the result
-        var destination = nodes[nodes.GetLength(0) - 1, nodes.GetLength(1) - 1];
-
-        // Mark the road traveled (debugging)
-        var grid = new bool[nodes.GetLength(0), nodes.GetLength(1)];
-        var current = destination;
-        grid[current.Row, current.Column] = true;
-        while (current.Row != 0 || current.Column != 0)
-        {
-            current = current.Parent;
-            grid[current.Row, current.Column] = true;
-        } 
-
-        // Plot the grid (debugging)
-        for (int row = 0; row < grid.GetLength(0); row++)
-        {
-            for (int column = 0; column < grid.GetLength(1); column++)
-            {
-                // if (grid[row, column]) Console.Write($"{nodes[row, column].Steps:000}");
-                // if (grid[row, column]) Console.Write(nodes[row, column].Direction.ToString()[0]);
-                // if (grid[row, column]) Console.Write($"{nodes[row, column].Distance:000}");
-                // Console.Write($"{nodes[row, column].Steps} ");
-                // Console.Write($"{nodes[row, column].Distance:000} ");
-                if (grid[row, column]) Console.Write($"{nodes[row, column].UnidirectionalDistance():000}");
-                // if (grid[row, column]) Console.Write($"{nodes[row, column].UnidirectionalDistance():00} ");
-                // if (grid[row, column]) Console.Write("#");
-                // else Console.Write(lines[row][column]);
-                else Console.Write(" . ");
-                // else Console.Write(".");
-                // else Console.Write("   ");
-            }
-            Console.WriteLine();
-        }
-        Console.WriteLine();
-
-        Console.WriteLine($"Result 1: {destination.Distance}");
+        Console.WriteLine($"Result 1: {result}");
     }
 
-    private static List<(Direction, Node)> GetNeighbors(Node[,] nodes, Node currentNode)
+    private static int Dijkstra(int[,] blocks)
     {
-        var candidates = new List<(Direction, Node)>();
-        if (currentNode.Row >= 1)
+        // Start at top left corner
+        var startPoint = new Node
         {
-            var node = nodes[currentNode.Row - 1, currentNode.Column]; 
-            if (!node.Visited) candidates.Add((Direction.Up, node));
-        }
-        if (currentNode.Row < nodes.GetLength(0) - 1)
-        {
-            var node = nodes[currentNode.Row + 1, currentNode.Column];
-            if (!node.Visited) candidates.Add((Direction.Down, node));
-        }
-        if (currentNode.Column >= 1)
-        {
-            var node = nodes[currentNode.Row, currentNode.Column - 1];
-            if (!node.Visited) candidates.Add((Direction.Left, node));
-        }
-        if (currentNode.Column < nodes.GetLength(1) - 1)
-        {
-            var node = nodes[currentNode.Row, currentNode.Column + 1];
-            if (!node.Visited) candidates.Add((Direction.Right, node));
-        }
+            Position = new Position(0, 0)
+        };
 
-        return candidates;
-    }
+        // Stop at bottom right corner
+        Position destination = new Position(blocks.GetLength(0) - 1, blocks.GetLength(1) - 1);
 
 
-    class Node
-    {
-        const int MAX_SINGLE_DIRECTION = 3;
-
-        public bool Visited { get; set; } = false;
-        public Node? Parent { get; set; } =  null;
-        public int Distance { get; set; } = int.MaxValue;
-        public int Steps { get; set; } = 1;
-        public Direction Direction { get; set; } = Direction.Xnknown;
-        public int HeatLoss { get; set; } = 0;
-        public int Row { get; set; }
-        public int Column { get; set; }
-
-        public bool IsOnLocation(int row, int column)
+        // lol. Convert node to heat loss
+        var heatMap = new Dictionary<Node, int>
         {
-            return Row == row && Column == column;
+            { startPoint, 0 },
+        };
+
+        // Node with heat loss ordered by heat loss
+        var queue = new PriorityQueue<(Node, int), int>();
+        foreach (var node in heatMap.Keys)
+        {
+            queue.Enqueue((node, 0), 0);
         }
 
-        internal bool IsWithinUnidirectionalDistance(Node current)
+        while (queue.Count > 0)
         {
-            var unidirectionalDistance = 0;
-            if (current.Column == Column)
+            var (node, heatLoss) = queue.Dequeue();
+            if (node.Position == destination)
             {
-                var parent = current.Parent;
-                unidirectionalDistance++;
-                while (Column == parent?.Column)
-                {
-                    unidirectionalDistance++;
-                    parent = parent.Parent;
-                }
+                return heatMap[node];
             }
 
-            else if (current.Row == Row)
+            var candidates = GetCandidates(node, blocks);
+            foreach (var candidate in candidates)
             {
-                var parent = current.Parent;
-                unidirectionalDistance++;
-                while (Row == parent?.Row)
+                var newHeatLoss = heatLoss + blocks[candidate.Position.Row, candidate.Position.Column];
+                var currentHeatLoss = heatMap.GetValueOrDefault(candidate, int.MaxValue);
+                if (newHeatLoss < currentHeatLoss)
                 {
-                    unidirectionalDistance++;
-                    parent = parent.Parent;
+                    heatMap[candidate] = newHeatLoss;
+                    queue.Enqueue((candidate, newHeatLoss), newHeatLoss);
                 }
             }
-
-            return unidirectionalDistance <= MAX_SINGLE_DIRECTION;
-            // return true;
         }
-        
-        internal int UnidirectionalDistance()
-        {
-            var unidirectionalDistance = 0;
-            if (Parent != null && Parent.Column == Column)
-            {
-                var parent = Parent;
-                while (Column == parent?.Column)
-                {
-                    unidirectionalDistance++;
-                    parent = parent.Parent;
-                }
-            }
 
-            else if (Parent != null && Parent.Row == Row)
-            {
-                var parent = Parent;
-                while (Row == parent?.Row)
-                {
-                    unidirectionalDistance++;
-                    parent = parent.Parent;
-                }
-            }
-
-            return unidirectionalDistance;
-        }
+        throw new Exception();
     }
 }
