@@ -1,6 +1,5 @@
 public enum Direction
 {
-    Any,
     Left,
     Right,
     Down,
@@ -13,7 +12,6 @@ public static class  DirectionMethods
     {
         return direction switch
         {
-            Direction.Any => Direction.Any,
             Direction.Left => Direction.Right,
             Direction.Right => Direction.Left,
             Direction.Down => Direction.Up,

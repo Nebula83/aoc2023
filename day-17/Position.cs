@@ -37,7 +37,7 @@ public struct Position : IEquatable<Position>
         return !lhs.Equals(rhs);
     }
 
-    public List<(Direction, Position)> GetNeighbors(int maxWidth, int maxHeight)
+    public readonly List<(Direction, Position)> GetNeighbors(int maxHeight, int maxWidth)
     {
         var neighbors = new List<(Direction, Position)>();
         if (Row > 0)

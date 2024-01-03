@@ -35,7 +35,22 @@ partial class Day1
         return lines;
     }
     
-    private static List<Node> GetCandidates(Node node, int[,] blocks)
+    private static List<Node> GetClassicCandidates(Node node, int[,] blocks)
+    {
+        var candidates = new List<Node>();
+        foreach (var (direction, position) in node.Position.GetNeighbors(blocks.GetLength(0), blocks.GetLength(1)))
+        {
+            candidates.Add(new Node
+            {
+                Position = position,
+                Direction = Direction.Right, // really doesn't matter
+                Steps = 1, // really doesn't matter
+            });
+        }
+        return candidates;
+    }
+    
+    private static List<Node> GetPart1Candidates(Node node, int[,] blocks)
     {
         var candidates = new List<Node>();
         foreach (var (direction, position) in node.Position.GetNeighbors(blocks.GetLength(0), blocks.GetLength(1)))
@@ -67,6 +82,40 @@ partial class Day1
         }
         return candidates;
     }
+    
+    private static List<Node> GetPart2Candidates(Node node, int[,] blocks)
+    {
+        var candidates = new List<Node>();
+        foreach (var (direction, position) in node.Position.GetNeighbors(blocks.GetLength(0), blocks.GetLength(1)))
+        {
+            // Can't walk back
+            if (direction != node.Direction.Opposite())
+            {
+                // Only turn after the minimal amount of steps
+                if (direction != node.Direction && node.Steps >= 4)
+                {
+                    // Different direction, reset steps
+                    candidates.Add(new Node
+                    {
+                        Position = position,
+                        Direction = direction,
+                        Steps = 1,
+                    });
+                }
+                // Still within allowed distance
+                else if (direction == node.Direction && node.Steps < 10)
+                {
+                    candidates.Add(new Node
+                    {
+                        Position = position,
+                        Direction = direction,
+                        Steps = node.Steps + 1,
+                    });
+                }
+            }
+        }
+        return candidates;
+    }
 
     internal static void Run()
     {
@@ -86,29 +135,54 @@ partial class Day1
         }
 
         // Start at top left corner
-        var startPoint = new Node
+        var startPoints = new List<Node>
         {
-            Position = new Position(0, 0),
-            Direction = Direction.Any,
-            Steps = 0,
+            new Node
+            {
+                Position = new Position(0, 0),
+                Direction = Direction.Right,
+                Steps = 0,
+            },
+            new Node
+            {
+                Position = new Position(0, 0),
+                Direction = Direction.Down,
+                Steps = 0,
+            }
         };
 
         // Stop at bottom right corner
         Position destination = new Position(blocks.GetLength(0) - 1, blocks.GetLength(1) - 1);
 
-        var result = Dijkstra(blocks, startPoint, destination);
+        var result = Dijkstra(blocks, startPoints, destination, GetClassicCandidates);
+        Console.WriteLine($"Classic: {result}");
 
+        result = Dijkstra(blocks, startPoints, destination, GetPart1Candidates);
         Console.WriteLine($"Result 1: {result}");
+
+        result = Dijkstra(blocks, startPoints, destination, GetPart2Candidates);
+        Console.WriteLine($"Result 2: {result}");
     }
 
-    private static int Dijkstra(int[,] blocks, Node startPoint, Position destination)
+    private static int Dijkstra(
+        int[,] blocks, 
+        List<Node> startPoints, 
+        Position destination, 
+        Func<Node, int[,], List<Node>> getCandidates)
     {
         // lol. Convert node to heat loss
-        var heatMap = new Dictionary<Node, int> { { startPoint, 0 }};
+        var heatMap = new Dictionary<Node, int>();
+        foreach (var node in startPoints)
+        {
+            heatMap.Add(node, 0);
+        }
 
         // Node with heat loss ordered by heat loss
         var queue = new PriorityQueue<(Node, int), int>();
-        queue.Enqueue((startPoint, 0), 0);
+        foreach (var node in startPoints)
+        {
+            queue.Enqueue((node, 0), 0);
+        }
 
         while (queue.Count > 0)
         {
@@ -118,7 +192,7 @@ partial class Day1
                 return heatMap[node];
             }
 
-            var candidates = GetCandidates(node, blocks);
+            var candidates = getCandidates(node, blocks);
             foreach (var candidate in candidates)
             {
                 var newHeatLoss = heatLoss + blocks[candidate.Position.Row, candidate.Position.Column];
