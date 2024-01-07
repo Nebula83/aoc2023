@@ -1,5 +1,6 @@
 public enum Direction
 {
+    Any,
     Up,
     Down,
     Left,
@@ -31,4 +32,25 @@ public static class DirectionExtensions
             _ => throw new ArgumentOutOfRangeException(nameof(direction)),
         };
     }
+
+    public static Direction Move(this Direction direction, Direction newDirection)
+    {
+        switch (newDirection)
+        {
+            case Direction.Any:
+                break;
+            case Direction.Up:
+                break;
+            case Direction.Down:
+                break;
+            case Direction.Left:
+                break;
+            case Direction.Right:
+                break;
+            
+            default: break;
+        }
+
+        return Direction.Any;
+    } 
 }

@@ -1,4 +1,4 @@
-using System.IO;
+// using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
@@ -47,6 +47,9 @@ class Day1
             EdgeColor = "",
         };
 
+        var doFloodFill = true;
+        // var doFloodFill = false;
+
         // Gather all the holes
         var current = start;
         var holes = new List<Hole>{start};
@@ -64,13 +67,16 @@ class Day1
                 throw new IndexOutOfRangeException(nameof(count));
             }
 
+            var newPoint = current.Coord.Move(direction, count);
             Hole? newHole = null;
+            points.Add(new Hole {
+                Coord = newPoint,
+            });
             for (int step = 0; step < count; step++)
             {
                 newHole = new Hole
                 {
                     Coord = current.Coord.Move(direction),
-                    EdgeColor = edgeColor,
                 };
                 holes.Add(newHole);
                 current = newHole;
@@ -83,42 +89,62 @@ class Day1
         
         var minY = holes.Select(h => h.Coord.Y).Min();
         var maxY = holes.Select(h => h.Coord.Y).Max();
+
+        Coord overlap = new Coord(-minX, -minY);
         
-        // Find the overlap
-        var grid = new bool[maxX - minX + 1, maxY - minY + 1];
+        var grid = new char[maxX - minX + 1, maxY - minY + 1];
         foreach (var hole in holes)
         {
             var x = hole.Coord.X - minX;
             var y = hole.Coord.Y - minY;
 
-            grid[x, y] =  true;;
+            // grid[x, y] = '#';
+            if (hole.Coord == overlap)
+            {
+                grid[x, y] = 'O';
+            }
+            else
+            {
+                grid[x, y] = hole.Coord.Direction.ToString()[0];
+            }
         }
 
-        Coord overlap = new Coord(-minX, -minY);
+        // foreach (var point in points)
+        // {
+        //     var x = point.Coord.X - minX;
+        //     var y = point.Coord.Y - minY;
+
+        //     grid[x, y] = '*';
+        // } 
+
 
         // Flood fill
-        var queue = new Queue<Coord>();
-        queue.Enqueue(new Coord(overlap.X + 1, overlap.Y + 1));
-        var neighborList = new List<(int, int)>
+        if (doFloodFill)
         {
-            (0, 1),
-            (0, -1),
-            (1, 0),
-            (-1, 0),
-        };
-        while (queue.Count > 0)
-        {
-            var coord = queue.Dequeue();
-            // Get neighbors
-            foreach (var (dx, dy) in neighborList)
+            var queue = new Queue<Coord>();
+            queue.Enqueue(new Coord(overlap.X + 1, overlap.Y + 1));
+            var neighborList = new List<(int, int)>
             {
-                var newCoord = new Coord(coord.X + dx, coord.Y + dy) ;
-                if (0 <= newCoord.X && newCoord.X < grid.GetLength(0)
-                    && 0 <= newCoord.Y && newCoord.Y < grid.GetLength(1)
-                    && !grid[newCoord.X, newCoord.Y])
+                (0, 1),
+                (0, -1),
+                (1, 0),
+                (-1, 0),
+            };
+            while (queue.Count > 0)
+            {
+                var coord = queue.Dequeue();
+                // Get neighbors
+                foreach (var (dx, dy) in neighborList)
                 {
-                    grid[newCoord.X, newCoord.Y] = true;
-                    queue.Enqueue(newCoord);
+                    var newCoord = new Coord(coord.X + dx, coord.Y + dy) ;
+                    if (0 <= newCoord.X && newCoord.X < grid.GetLength(0)
+                        && 0 <= newCoord.Y && newCoord.Y < grid.GetLength(1)
+                        && grid[newCoord.X, newCoord.Y] == '\0')
+                    {
+                        grid[newCoord.X, newCoord.Y] = '.';
+                        // grid[newCoord.X, newCoord.Y] = '$';
+                        queue.Enqueue(newCoord);
+                    }
                 }
             }
         }
@@ -126,19 +152,34 @@ class Day1
         var sum = 0;
         for (int x = 0; x < grid.GetLength(0); x++)
         {
+            // Console.Write($"{x + minX}: ");
+            var row = 0;
             for (int y = 0; y < grid.GetLength(1); y++)
             {
-                // Console.Write(grid[x,y] ? '#' :'.');
-                if (grid[x,y])
+                // switch (grid[x,y])
+                // {
+                //     case 1: Console.Write("#"); break;
+                //     case 2: Console.Write('*'); break;
+                //     case 3: Console.Write('$'); break;
+                //     default: Console.Write('.'); break;
+                // }
+
+                if (grid[x,y] != '\0')
                 {
+                    // Console.Write(grid[x,y]);
                     sum++;
+                    row++;
+                }
+                else
+                {
+                    // Console.Write('.');
                 }
             }
-            // Console.WriteLine();
+            // Console.WriteLine($"{row}");
         }
         // Console.WriteLine();
        
-        // 54552 too low
         Console.WriteLine($"Result 1: {sum}");
+        Console.WriteLine();
     }
 }
