@@ -1,4 +1,3 @@
-using System.IO;
 using System.Text.RegularExpressions;
 
 class Day2
@@ -60,7 +59,8 @@ class Day2
             {
                 ruleList.Add(new Rule
                 {
-                    Type = rule.Groups[1].Value[0],
+                    Type = rule.Groups[1].Value[0], // xmas
+                    Operator = rule.Groups[2].Value[0], 
                     Compare = rule.Groups[2].Value[0] == '<'
                         ? (i, v) => { return i < v; }
                     : (i, v) => { return i > v; },
@@ -95,27 +95,74 @@ class Day2
         }
     }
 
-    private int GetTotalRatings()
+    private long Combinations(Dictionary<char, XmasRange> xmas, string workflowName)
     {
-        var sum = 0;
-        foreach (var part in parts)
+        if (workflowName == "R") return 0;
+        else if (workflowName == "A") 
         {
-            var currentWorkflow = workflows["in"];
-            while (true)
+            var combinations  = 1L;
+            foreach (var range in xmas.Values)
             {
-                var refer = currentWorkflow.Process(part);
-                if (refer == "A")
-                {
-                    sum += part['x'] + part['m'] + part['a'] + part['s'];
-                    break;
-                }
-                else if (refer == "R")
-                {
-                    break;
-                }
-                currentWorkflow = workflows[refer];
+                combinations *= range.GetRange();
+            }
+            return combinations;
+        }
+
+        var sum = 0L;
+        var workflow = workflows[workflowName];
+        foreach (var rule in workflow.Rules)
+        {
+            var range = xmas[rule.Type];
+            XmasRange accept;
+            XmasRange reject;
+            if (rule.Operator == '<')
+            {
+                accept = new XmasRange(range.Left, rule.Value - 1);
+                reject = new XmasRange(rule.Value,  range.Right);
+            }
+            else if (rule.Operator == '>')
+            {
+                accept = new XmasRange(rule.Value + 1, range.Right);
+                reject = new XmasRange(range.Left, rule.Value);
+            }
+            else
+            {
+                throw new InvalidOperationException($"{rule.Operator}");
+            }
+
+            // Check if the ranges are valid
+            if (accept.IsValid())
+            {
+                var result = new Dictionary<char, XmasRange>(xmas);
+                result[rule.Type] = accept;
+                // The rule accepted this range, so venture further
+                sum += Combinations(result, rule.Refer);
+            }
+            if (reject.IsValid())
+            {
+                xmas = new Dictionary<char, XmasRange>(xmas);
+                xmas[rule.Type] = reject;
             }
         }
+
+        sum += Combinations(xmas, workflow.LastRule);
+
+        return sum;
+    }
+
+    private long GetFullRange()
+    {
+        var sum = 0L;
+
+        var ranges = new Dictionary<char, XmasRange>
+        {
+            {'x', new XmasRange(1, 4000)},
+            {'m', new XmasRange(1, 4000)},
+            {'a', new XmasRange(1, 4000)},
+            {'s', new XmasRange(1, 4000)},
+        };
+        sum += Combinations(ranges, "in");
+
         return sum;
     }
 
@@ -125,9 +172,38 @@ class Day2
         // day.ParseFile("test-1.txt");
         day.ParseFile("input.txt");
 
-        var result = day.GetTotalRatings();
+        var result = day.GetFullRange();
 
         Console.WriteLine($"Result 1: {result}");
     }
 
+}
+
+public class XmasRange
+{
+    public int Left { get; set; }
+    public int Right { get; set; }
+
+    public XmasRange(int left, int right)
+    {
+        Left = left;
+        Right = right;
+    }
+
+    public XmasRange()
+    {
+        Left = 0;
+        Right = 0;
+    }
+
+    public long GetRange()
+    {
+        // + 1 because both ends are inclusive (full range is 4000) 
+        return Right - Left + 1;
+    }
+
+    public bool IsValid()
+    {
+        return Left <= Right;
+    }
 }
