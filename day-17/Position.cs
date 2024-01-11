@@ -1,4 +1,4 @@
-public struct Position : IEquatable<Position>
+public record struct Position 
 {
     public Position(int row, int column)
     {
@@ -8,34 +8,6 @@ public struct Position : IEquatable<Position>
 
     public int Row { get; set; }
     public int Column { get; set; }
-
-    public override bool Equals(Object? obj)
-    {
-        return obj is Position position && Equals(position);
-    }
-
-    public bool Equals(Position other)
-    {
-        return Row == other.Row && Column == other.Column;
-    }
-
-    public override int GetHashCode()
-    {
-        unchecked
-        {
-            return Row.GetHashCode() * 17 + Column.GetHashCode();
-        }
-    }
-
-    public static bool operator ==(Position lhs, Position rhs)
-    {
-        return lhs.Equals(rhs);
-    }
-
-    public static bool operator !=(Position lhs, Position rhs)
-    {
-        return !lhs.Equals(rhs);
-    }
 
     public readonly List<(Direction, Position)> GetNeighbors(int maxHeight, int maxWidth)
     {
